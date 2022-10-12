@@ -122,6 +122,31 @@ class TrustScore:
         return d_to_closest_not_pred / (d_to_pred + self.min_dist)
 
 
+    def get_my_score(self, X: np.array, y_pred: np.array):
+        """Compute the trust scores.
+
+    Given a set of points, determines the distance to each class.
+
+    Args:
+    X: an array of sample points.
+    y_pred: The predicted labels for these points.
+
+    Returns:
+    The trust score, which is ratio of distance to closest class that was not
+    the predicted class to the distance to the predicted class.
+    """
+        d = np.tile(None, (X.shape[0], self.n_labels))
+        for label_idx in range(self.n_labels):
+            d[:, label_idx] = self.kdtrees[label_idx].query(X, k=2)[0][:, -1]
+
+        sorted_d = np.sort(d, axis=1)
+        d_to_pred = d[range(d.shape[0]), y_pred]
+        d_to_closest_not_pred = np.where(
+            sorted_d[:, 0] != d_to_pred, sorted_d[:, 0], sorted_d[:, 1]
+        )
+        return d_to_closest_not_pred / (d_to_closest_not_pred + d_to_pred)
+
+
 class KNNConfidence:
     """Baseline which uses disagreement to kNN classifier.
   """
